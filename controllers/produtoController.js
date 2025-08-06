@@ -1,5 +1,5 @@
-const Produto = require('../models/Produto');
-const Categoria = require('../models/Categoria');
+const Produto = require('../models/produtoModel');
+const Categoria = require('../models/categoriaModel');
 
 const produtoController = {
     // Criar um novo produto

@@ -2,70 +2,47 @@ const express = require('express');
 const bodyParser = require('body-parser');
 const methodOverride = require('method-override');
 const expressLayouts = require('express-ejs-layouts');
-const indexRoutes = require('./routes/indexRoutes');
-const usuarioRoutes = require('./routes/usuarioRoutes'); // Renomeado aqui
-const produtoRoutes = require('./routes/produtoRoutes');
-const Produto = require('./models/produtoModel');
-const categoriaRoutes = require('./routes/categoriaRoutes');
-const Categoria = require('./models/categoriaModel');
-const CategoriaController = require('./controllers/CategoriaController'); // Importa o controlador de categorias
-const servicosRoutes = require('./routes/servicosRoutes');
-const Servicos = require('./models/servicosModel');
-const servicosController = require('./controllers/servicosController');
-const sequelize = require('./config/db'); // Conexão com o banco
 
+// Rotas
+const indexRoutes = require('./routes/indexRoutes');
+const usuarioRoutes = require('./routes/usuarioRoutes');
+const produtoRoutes = require('./routes/produtoRoutes');
+const categoriaRoutes = require('./routes/categoriaRoutes');
+const servicosRoutes = require('./routes/servicosRoutes');
+
+// Models e DB
+const { sequelize } = require('./models'); // carrega models e define associações automaticamente
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
+// Configurações do template engine
 app.set('view engine', 'ejs');
 app.set('views', __dirname + '/views');
 app.use(expressLayouts);
-app.set('layout', 'layouts/main'); // se estiver usando layouts
+app.set('layout', 'layouts/main');
 
+// Middlewares
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(methodOverride('_method'));
 
 // Rotas
 app.use('/', indexRoutes);
-app.use('/usuarios', usuarioRoutes); // Aqui mudou de /users para /usuarios
+app.use('/usuarios', usuarioRoutes);
 app.use('/produtos', produtoRoutes);
 app.use('/categorias', categoriaRoutes);
 app.use('/servicos', servicosRoutes);
 
+// Iniciar o servidor e sincronizar o banco de dados
 app.listen(PORT, () => {
-    console.log(`Server is running on port ${PORT}`);
+    console.log(`Servidor rodando na porta ${PORT}`);
+
+    sequelize.sync({ force: false })
+        .then(() => {
+            console.log('Banco de dados sincronizado.');
+        })
+        .catch((err) => {
+            console.error('Erro ao sincronizar o banco de dados:', err);
+        });
 });
-
-sequelize.sync({ force: false }) // 'force: false' impede que as tabelas sejam recriadas, preservando os dados existentes
-  .then(() => {
-    console.log('Banco de dados sincronizado.');
-  })
-  .catch((err) => {
-    console.error('Erro ao sincronizar o banco de dados:', err);
-  });
-
-  
-
-
-// Sincronizando o banco de dados (cria as tabelas, mas não apaga dados)
-sequelize.sync({ force: false }) // 'force: false' preserva os dados existentes
-    .then(() => {
-        console.log('Banco de dados sincronizado.');
-    })
-    .catch((err) => {
-        console.error('Erro ao sincronizar o banco de dados:', err);
-    });
-
-// Exemplo de uso de CRUD
-CategoriaController.create({ nome: 'Tecnologia' }, (err, categoria) => {
-    if (err) {
-        console.log('Erro ao criar categoria:', err);
-    } else {
-        console.log('Categoria criada:', categoria);
-    }
-});
-
-Categoria.hasMany(Produto, { foreignKey: 'categoria' });
-Produto.belongsTo(Categoria, { foreignKey: 'categoria' });
