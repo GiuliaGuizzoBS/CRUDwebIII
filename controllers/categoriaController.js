@@ -1,83 +1,125 @@
-const Categoria = require('../models/categoriaModel');
+const Categoria = require('../models/Categoria'); // Importando o modelo com Sequelize
 
 const categoriaController = {
-    createCategoria: (req, res) => {
-        const newCategoria = {
-            nome: req.body.nome
-        };
+    // Criar uma nova categoria
+    createCategoria: async (req, res) => {
+        const { nome } = req.body; // Extrai o nome do corpo da requisição
 
-        Categoria.create(newCategoria, (err, categoriaId) => {
-            if (err) {
-                return res.status(500).json({ error: err });
-            }
+        try {
+            // Cria a nova categoria
+            const novaCategoria = await Categoria.create({ nome });
+
+            // Redireciona para a lista de categorias
             res.redirect('/categorias');
-        });
+        } catch (err) {
+            // Se ocorrer um erro, envia uma resposta de erro
+            return res.status(500).json({ error: err.message });
+        }
     },
 
-    getCategoriaById: (req, res) => {
-        const categoriaId = req.params.id;
+    // Encontrar uma categoria por ID
+    getCategoriaById: async (req, res) => {
+        const categoriaId = req.params.id; // Obtém o id da categoria da URL
 
-        Categoria.findById(categoriaId, (err, categoria) => {
-            if (err) {
-                return res.status(500).json({ error: err });
-            }
+        try {
+            // Busca a categoria pelo ID
+            const categoria = await Categoria.findByPk(categoriaId);
+
+            // Se a categoria não for encontrada, retorna erro 404
             if (!categoria) {
-                return res.status(404).json({ message: 'Categoria not found' });
+                return res.status(404).json({ message: 'Categoria não encontrada' });
             }
+
+            // Renderiza a página para mostrar a categoria
             res.render('categorias/show', { categoria });
-        });
+        } catch (err) {
+            return res.status(500).json({ error: err.message });
+        }
     },
 
-    getAllCategorias: (req, res) => {
-        Categoria.getAll((err, categorias) => {
-            if (err) {
-                return res.status(500).json({ error: err });
-            }
+    // Obter todas as categorias
+    getAllCategorias: async (req, res) => {
+        try {
+            // Busca todas as categorias
+            const categorias = await Categoria.findAll();
+
+            // Renderiza a página com a lista de categorias
             res.render('categorias/index', { categorias });
-        });
+        } catch (err) {
+            return res.status(500).json({ error: err.message });
+        }
     },
 
+    // Renderizar formulário de criação de categoria
     renderCreateForm: (req, res) => {
-        res.render('categorias/create');
+        res.render('categorias/create'); // Renderiza o formulário de criação
     },
 
-    renderEditForm: (req, res) => {
+    // Renderizar formulário de edição de categoria
+    renderEditForm: async (req, res) => {
         const categoriaId = req.params.id;
 
-        Categoria.findById(categoriaId, (err, categoria) => {
-            if (err) {
-                return res.status(500).json({ error: err });
-            }
+        try {
+            // Busca a categoria pelo ID
+            const categoria = await Categoria.findByPk(categoriaId);
+
+            // Se não encontrar, retorna erro 404
             if (!categoria) {
-                return res.status(404).json({ message: 'Categoria not found' });
+                return res.status(404).json({ message: 'Categoria não encontrada' });
             }
+
+            // Renderiza a página de edição
             res.render('categorias/edit', { categoria });
-        });
+        } catch (err) {
+            return res.status(500).json({ error: err.message });
+        }
     },
 
-    updateCategoria: (req, res) => {
+    // Atualizar uma categoria
+    updateCategoria: async (req, res) => {
         const categoriaId = req.params.id;
-        const updatedCategoria = {
-            nome: req.body.nome
-        };
+        const { nome } = req.body; // Extrai o novo nome
 
-        Categoria.update(categoriaId, updatedCategoria, (err) => {
-            if (err) {
-                return res.status(500).json({ error: err });
+        try {
+            // Tenta atualizar a categoria
+            const [affectedRows] = await Categoria.update(
+                { nome },
+                { where: { id: categoriaId } }
+            );
+
+            // Se não encontrar a categoria, retorna erro 404
+            if (affectedRows === 0) {
+                return res.status(404).json({ message: 'Categoria não encontrada' });
             }
+
+            // Redireciona para a lista de categorias
             res.redirect('/categorias');
-        });
+        } catch (err) {
+            return res.status(500).json({ error: err.message });
+        }
     },
 
-    deleteCategoria: (req, res) => {
+    // Deletar uma categoria
+    deleteCategoria: async (req, res) => {
         const categoriaId = req.params.id;
 
-        Categoria.delete(categoriaId, (err) => {
-            if (err) {
-                return res.status(500).json({ error: err });
+        try {
+            // Tenta encontrar a categoria
+            const categoria = await Categoria.findByPk(categoriaId);
+
+            // Se não encontrar, retorna erro 404
+            if (!categoria) {
+                return res.status(404).json({ message: 'Categoria não encontrada' });
             }
+
+            // Deleta a categoria
+            await categoria.destroy();
+
+            // Redireciona para a lista de categorias
             res.redirect('/categorias');
-        });
+        } catch (err) {
+            return res.status(500).json({ error: err.message });
+        }
     }
 };
 

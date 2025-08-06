@@ -1,66 +1,96 @@
-const db = require('../config/db');
+const { Sequelize, DataTypes } = require('sequelize');
+const sequelize = require('../config/db'); // Importa a conexão do Sequelize
 
-const Categoria = {
-    create: (categoria, callback) => {
-        const query = 'INSERT INTO categorias (nome) VALUES (?)';
-        db.query(query, [categoria.nome], (err, results) => {
-            if (err) {
-                return callback(err);
-            }
-            callback(null, results.insertId);
-        });
+// Define o modelo 'Categoria' usando Sequelize
+const Categoria = sequelize.define('Categoria', {
+    nome: {
+        type: DataTypes.STRING,
+        allowNull: false, // Garante que o campo 'nome' não seja nulo
+    }
+}, {
+    timestamps: false, // Desativa os campos 'createdAt' e 'updatedAt'
+});
+
+// CRUD utilizando Sequelize
+
+const CategoriaController = {
+    // Criar uma categoria
+    create: async (categoria, callback) => {
+        try {
+            const novaCategoria = await Categoria.create({
+                nome: categoria.nome,
+            });
+            callback(null, novaCategoria); // Retorna a categoria criada
+        } catch (err) {
+            callback(err); // Retorna o erro se houver
+        }
     },
 
-    findById: (id, callback) => {
-        const query = 'SELECT * FROM categorias WHERE id = ?';
-        db.query(query, [id], (err, results) => {
-            if (err) {
-                return callback(err);
+    // Encontrar categoria por ID
+    findById: async (id, callback) => {
+        try {
+            const categoria = await Categoria.findByPk(id);
+            if (!categoria) {
+                return callback('Categoria não encontrada');
             }
-            callback(null, results[0]);
-        });
+            callback(null, categoria); // Retorna a categoria encontrada
+        } catch (err) {
+            callback(err); // Retorna o erro se houver
+        }
     },
 
-    findByCategorianame: (nome, callback) => {
-        const query = 'SELECT * FROM categorias WHERE nome = ?';
-        db.query(query, [nome], (err, results) => {
-            if (err) {
-                return callback(err);
+    // Encontrar categoria por nome
+    findByName: async (nome, callback) => {
+        try {
+            const categoria = await Categoria.findOne({ where: { nome } });
+            if (!categoria) {
+                return callback('Categoria não encontrada');
             }
-            callback(null, results[0]);
-        });
+            callback(null, categoria); // Retorna a categoria encontrada
+        } catch (err) {
+            callback(err); // Retorna o erro se houver
+        }
     },
 
-    update: (id, categoria, callback) => {
-        const query = 'UPDATE categorias SET nome = ? WHERE id = ?';
-        db.query(query, [categoria.nome,id], (err, results) => {
-            if (err) {
-                return callback(err);
+    // Atualizar uma categoria
+    update: async (id, categoria, callback) => {
+        try {
+            const [affectedRows] = await Categoria.update(
+                { nome: categoria.nome },
+                { where: { id } }
+            );
+            if (affectedRows === 0) {
+                return callback('Categoria não encontrada');
             }
-            callback(null, results);
-        });
+            callback(null, 'Categoria atualizada com sucesso');
+        } catch (err) {
+            callback(err); // Retorna o erro se houver
+        }
     },
 
-    delete: (id, callback) => {
-        const query = 'DELETE FROM categorias WHERE id = ?';
-        db.query(query, [id], (err, results) => {
-            if (err) {
-                return callback(err);
+    // Deletar uma categoria
+    delete: async (id, callback) => {
+        try {
+            const categoria = await Categoria.findByPk(id);
+            if (!categoria) {
+                return callback('Categoria não encontrada');
             }
-            callback(null, results);
-        });
+            await categoria.destroy(); // Deleta a categoria
+            callback(null, 'Categoria deletada com sucesso');
+        } catch (err) {
+            callback(err); // Retorna o erro se houver
+        }
     },
 
-    getAll: (callback) => {
-        const query = 'SELECT * FROM categorias';
-        db.query(query, (err, results) => {
-            if (err) {
-                return callback(err);
-            }
-            callback(null, results);
-        });
+    // Obter todas as categorias
+    getAll: async (callback) => {
+        try {
+            const categorias = await Categoria.findAll();
+            callback(null, categorias); // Retorna todas as categorias
+        } catch (err) {
+            callback(err); // Retorna o erro se houver
+        }
     },
 };
 
-
-module.exports = Categoria;
+module.exports = CategoriaController;

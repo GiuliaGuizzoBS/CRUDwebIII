@@ -30,3 +30,32 @@ app.use('/servicos', servicosRoutes);
 app.listen(PORT, () => {
     console.log(`Server is running on port ${PORT}`);
 });
+
+sequelize.sync({ force: false }) // 'force: false' impede que as tabelas sejam recriadas, preservando os dados existentes
+  .then(() => {
+    console.log('Banco de dados sincronizado.');
+  })
+  .catch((err) => {
+    console.error('Erro ao sincronizar o banco de dados:', err);
+  });
+
+  const sequelize = require('./config/db'); // Conexão com o banco
+const CategoriaController = require('./controllers/CategoriaController'); // Importa o controlador de categorias
+
+// Sincronizando o banco de dados (cria as tabelas, mas não apaga dados)
+sequelize.sync({ force: false }) // 'force: false' preserva os dados existentes
+    .then(() => {
+        console.log('Banco de dados sincronizado.');
+    })
+    .catch((err) => {
+        console.error('Erro ao sincronizar o banco de dados:', err);
+    });
+
+// Exemplo de uso de CRUD
+CategoriaController.create({ nome: 'Tecnologia' }, (err, categoria) => {
+    if (err) {
+        console.log('Erro ao criar categoria:', err);
+    } else {
+        console.log('Categoria criada:', categoria);
+    }
+});

@@ -3,111 +3,126 @@ const Categoria = require('../models/categoriaModel');
 
 const servicosController = {
 
-    createServicos: (req, res) => {
-
-        const newServicos = {
-            nome: req.body.nome,
-            descricao: req.body.descricao,
-            preco: req.body.preco,
-            quantidade: req.body.quantidade,
-            categoria: req.body.categoria
-        };
-
-        Servicos.create(newServicos, (err, servicosId) => {
-            if (err) {
-                return res.status(500).json({ error: err });
-            }
+    createServicos: async (req, res) => {
+        try {
+            const { nome, descricao, preco, quantidade, categoria } = req.body;
+            const newServicos = await Servicos.create({
+                nome,
+                descricao,
+                preco,
+                quantidade,
+                categoria
+            });
             res.redirect('/servicos');
-        });
+        } catch (err) {
+            return res.status(500).json({ error: err.message });
+        }
     },
 
-    getServicosById: (req, res) => {
-        const servicosId = req.params.id;
+    getServicosById: async (req, res) => {
+        try {
+            const servicosId = req.params.id;
+            const servicos = await Servicos.findOne({
+                where: { id: servicosId },
+                include: [{
+                    model: Categoria,
+                    as: 'categoria', // A associação com Categoria
+                    attributes: ['nome']
+                }]
+            });
 
-        Servicos.findById(servicosId, (err, servicos) => {
-            if (err) {
-                return res.status(500).json({ error: err });
-            }
             if (!servicos) {
-                return res.status(404).json({ message: 'Serviço not found' });
+                return res.status(404).json({ message: 'Serviço não encontrado' });
             }
             res.render('servicos/show', { servicos });
-        });
-    },
-    
-    getAllServicos: (req, res) => {
-        const categoria = req.query.categoria || null;
-        
-        Servicos.getAll(categoria, (err, servicos) => {
-            if (err) {
-                return res.status(500).json({ error: err });
-            }
-            Categoria.getAll((err, categorias) => {
-                if (err) {
-                    return res.status(500).json({ error: err });
-                }
-                res.render('servicos/index', { servicos, categorias, categoriaSelecionada: categoria });
-            });
-        });
+        } catch (err) {
+            return res.status(500).json({ error: err.message });
+        }
     },
 
-    renderCreateForm: (req, res) => {
-        Categoria.getAll((err, categorias) => {
-            if (err) {
-                return res.status(500).json({ error: err });
-            }
+    getAllServicos: async (req, res) => {
+        try {
+            const categoria = req.query.categoria || null;
+            const servicos = await Servicos.findAll({
+                where: categoria ? { categoria } : {},
+                include: [{
+                    model: Categoria,
+                    as: 'categoria',
+                    attributes: ['nome']
+                }]
+            });
+            const categorias = await Categoria.findAll();
+            res.render('servicos/index', { servicos, categorias, categoriaSelecionada: categoria });
+        } catch (err) {
+            return res.status(500).json({ error: err.message });
+        }
+    },
+
+    renderCreateForm: async (req, res) => {
+        try {
+            const categorias = await Categoria.findAll();
             res.render('servicos/create', { categorias });
-        });
+        } catch (err) {
+            return res.status(500).json({ error: err.message });
+        }
     },
 
-    renderEditForm: (req, res) => {
-        const servicosId = req.params.id;
-
-        Servicos.findById(servicosId, (err, servicos) => {
-            if (err) {
-                return res.status(500).json({ error: err });
-            }
-            if (!servicos) {
-                return res.status(404).json({ message: 'Servico not found' });
-            }
-
-            Categoria.getAll((err, categorias) => {
-                if (err) {
-                    return res.status(500).json({ error: err });
-                }
-                res.render('servicos/edit', { servicos, categorias });
+    renderEditForm: async (req, res) => {
+        try {
+            const servicosId = req.params.id;
+            const servicos = await Servicos.findOne({
+                where: { id: servicosId },
+                include: [{
+                    model: Categoria,
+                    as: 'categoria',
+                    attributes: ['nome']
+                }]
             });
-        });
+
+            if (!servicos) {
+                return res.status(404).json({ message: 'Serviço não encontrado' });
+            }
+
+            const categorias = await Categoria.findAll();
+            res.render('servicos/edit', { servicos, categorias });
+        } catch (err) {
+            return res.status(500).json({ error: err.message });
+        }
     },
 
-    updateServicos: (req, res) => {
-        const servicosId = req.params.id;
-        
-        const updatedServicos = {
-            nome: req.body.nome,
-            descricao: req.body.descricao,
-            preco: req.body.preco,
-            quantidade: req.body.quantidade,
-            categoria: req.body.categoria
-        };
+    updateServicos: async (req, res) => {
+        try {
+            const servicosId = req.params.id;
+            const { nome, descricao, preco, quantidade, categoria } = req.body;
 
-        Servicos.update(servicosId, updatedServicos, (err) => {
-            if (err) {
-                return res.status(500).json({ error: err });
+            const servicos = await Servicos.update(
+                { nome, descricao, preco, quantidade, categoria },
+                { where: { id: servicosId } }
+            );
+
+            if (servicos[0] === 0) {
+                return res.status(404).json({ message: 'Serviço não encontrado' });
             }
+
             res.redirect('/servicos');
-        });
+        } catch (err) {
+            return res.status(500).json({ error: err.message });
+        }
     },
 
-    deleteServicos: (req, res) => {
-        const servicosId = req.params.id;
+    deleteServicos: async (req, res) => {
+        try {
+            const servicosId = req.params.id;
+            const result = await Servicos.destroy({ where: { id: servicosId } });
 
-        Servicos.delete(servicosId, (err) => {
-            if (err) {
-                return res.status(500).json({ error: err });
+            if (result === 0) {
+                return res.status(404).json({ message: 'Serviço não encontrado' });
             }
+
             res.redirect('/servicos');
-        });
+        } catch (err) {
+            return res.status(500).json({ error: err.message });
+        }
     }
 };
 
