@@ -1,20 +1,23 @@
-const Usuario = require('../models/usuarioModel');
+const { Usuario, Sequelize } = require('../models'); // Corrigi a forma como você importa os models
 
 const usuarioController = {
     createUsuario: async (req, res) => {
         try {
-            const { username, password, role } = req.body;
-            const newUsuario = await Usuario.create({ username, password, role });
+            const newUsuario = {
+                usuarioname: req.body.usuarioname,
+                password: req.body.password,
+                role: req.body.role,
+            };
+            await Usuario.create(newUsuario);
             res.redirect('/usuarios');
         } catch (err) {
-            res.status(500).json({ error: err.message });
+            res.status(500).json({ error: err.message }); // Melhor tratamento de erro
         }
     },
 
     getUsuarioById: async (req, res) => {
         try {
-            const usuarioId = req.params.id;
-            const usuario = await Usuario.findByPk(usuarioId);
+            const usuario = await Usuario.findByPk(req.params.id);
             if (!usuario) {
                 return res.status(404).json({ message: 'Usuário não encontrado' });
             }
@@ -39,8 +42,7 @@ const usuarioController = {
 
     renderEditForm: async (req, res) => {
         try {
-            const usuarioId = req.params.id;
-            const usuario = await Usuario.findByPk(usuarioId);
+            const usuario = await Usuario.findByPk(req.params.id);
             if (!usuario) {
                 return res.status(404).json({ message: 'Usuário não encontrado' });
             }
@@ -53,14 +55,12 @@ const usuarioController = {
     updateUsuario: async (req, res) => {
         try {
             const usuarioId = req.params.id;
-            const { username, password, role } = req.body;
-            const updatedUsuario = await Usuario.update(
-                { username, password, role },
-                { where: { id: usuarioId } }
-            );
-            if (updatedUsuario[0] === 0) {
-                return res.status(404).json({ message: 'Usuário não encontrado' });
-            }
+            const updatedUsuario = {
+                usuarioname: req.body.usuarioname,
+                password: req.body.password,
+                role: req.body.role,
+            };
+            await Usuario.update(updatedUsuario, { where: { id: usuarioId } });
             res.redirect('/usuarios');
         } catch (err) {
             res.status(500).json({ error: err.message });
@@ -70,10 +70,7 @@ const usuarioController = {
     deleteUsuario: async (req, res) => {
         try {
             const usuarioId = req.params.id;
-            const deleted = await Usuario.destroy({ where: { id: usuarioId } });
-            if (!deleted) {
-                return res.status(404).json({ message: 'Usuário não encontrado' });
-            }
+            await Usuario.destroy({ where: { id: usuarioId } });
             res.redirect('/usuarios');
         } catch (err) {
             res.status(500).json({ error: err.message });
@@ -85,7 +82,7 @@ const usuarioController = {
             const search = req.query.search || '';
             const usuarios = await Usuario.findAll({
                 where: {
-                    username: {
+                    usuarioname: {
                         [Sequelize.Op.like]: `%${search}%`
                     }
                 }
