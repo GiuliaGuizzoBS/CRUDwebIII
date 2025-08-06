@@ -22,19 +22,20 @@ const Produto = sequelize.define('Produto', {
         type: DataTypes.INTEGER,
         allowNull: false,
         references: {
-            model: 'Categorias', // Refere-se à tabela de categorias
+            model: 'Categorias', // Refere-se à tabela de categorias (nome da tabela é 'categorias' por padrão)
             key: 'id'
         }
     }
 }, {
     timestamps: false, // Desativa os campos 'createdAt' e 'updatedAt'
+    tableName: 'produtos',  // Garantir que o nome da tabela seja 'produtos' no banco de dados
 });
 
 // Associa o produto com a categoria
 Produto.associate = (models) => {
     Produto.belongsTo(models.Categoria, {
-        foreignKey: 'categoria',
-        as: 'categoriaProduto',
+        foreignKey: 'categoria', // chave estrangeira
+        as: 'categoriaProduto',  // alias para a relação
     });
 };
 

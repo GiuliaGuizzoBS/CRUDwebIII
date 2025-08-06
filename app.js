@@ -3,10 +3,17 @@ const bodyParser = require('body-parser');
 const methodOverride = require('method-override');
 const expressLayouts = require('express-ejs-layouts');
 const indexRoutes = require('./routes/indexRoutes');
-const usuarioRoutes = require('./routes/userRoutes'); // Renomeado aqui
+const usuarioRoutes = require('./routes/usuarioRoutes'); // Renomeado aqui
 const produtoRoutes = require('./routes/produtoRoutes');
+const Produto = require('./models/produtoModel');
 const categoriaRoutes = require('./routes/categoriaRoutes');
+const Categoria = require('./models/categoriaModel');
+const CategoriaController = require('./controllers/CategoriaController'); // Importa o controlador de categorias
 const servicosRoutes = require('./routes/servicosRoutes');
+const Servicos = require('./models/servicosModel');
+const servicosController = require('./controllers/servicosController');
+const sequelize = require('./config/db'); // Conexão com o banco
+
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -39,8 +46,8 @@ sequelize.sync({ force: false }) // 'force: false' impede que as tabelas sejam r
     console.error('Erro ao sincronizar o banco de dados:', err);
   });
 
-  const sequelize = require('./config/db'); // Conexão com o banco
-const CategoriaController = require('./controllers/CategoriaController'); // Importa o controlador de categorias
+  
+
 
 // Sincronizando o banco de dados (cria as tabelas, mas não apaga dados)
 sequelize.sync({ force: false }) // 'force: false' preserva os dados existentes
@@ -59,3 +66,6 @@ CategoriaController.create({ nome: 'Tecnologia' }, (err, categoria) => {
         console.log('Categoria criada:', categoria);
     }
 });
+
+Categoria.hasMany(Produto, { foreignKey: 'categoria' });
+Produto.belongsTo(Categoria, { foreignKey: 'categoria' });
